@@ -1,61 +1,141 @@
-# `bookstore`
+# Bookstore Canister
 
-Welcome to your new `bookstore` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+## Overview
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+The **Bookstore Canister** is a decentralized application (DApp) running on the **Internet Computer**. It manages a virtual bookstore with functionalities for customers, books, and book assets. This backend allows for user authentication, book creation and assignment, asset depreciation, comments on books, and more. 
 
-To learn more before you start working with `bookstore`, see the following documentation available online:
+This project utilizes **Candid** for type serialization, **StableBTreeMap** for persistent storage, and the **IC SDK** to implement the canister's functionality.
 
-- [Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)
-- [SDK Developer Tools](https://internetcomputer.org/docs/current/developer-docs/setup/install)
-- [Rust Canister Development Guide](https://internetcomputer.org/docs/current/developer-docs/backend/rust/)
-- [ic-cdk](https://docs.rs/ic-cdk)
-- [ic-cdk-macros](https://docs.rs/ic-cdk-macros)
-- [Candid Introduction](https://internetcomputer.org/docs/current/developer-docs/backend/candid/)
+## Key Features
 
-If you want to start working on your project right away, you might want to try the following commands:
+- **User Roles**: Three types of roles: Admin, Store Manager, and Customer.
+- **Books**: Create books, assign them to customers, and update their status (Available, Sold, Reserved).
+- **Book Assets**: Track assets associated with books (e.g., hardcover, paperback), calculate depreciation, and manage asset assignments.
+- **Customer Management**: Create customers, authenticate them, and manage their roles.
+- **Comments**: Customers can leave comments on books.
+- **Persistence**: Stable storage is used to keep track of books, customers, and assets.
 
-```bash
-cd bookstore/
-dfx help
-dfx canister --help
-```
+## Prerequisites
 
-## Running the project locally
+- **Rust**: Install the Rust programming language via [rust-lang.org](https://www.rust-lang.org/tools/install).
+- **DFINITY SDK**: Install the DFINITY SDK to interact with the Internet Computer. You can follow the installation instructions [here](https://internetcomputer.org/docs/current/developers-guide/install/).
+- **Cargo**: Ensure you have `cargo` (Rust's package manager) installed to manage dependencies and build the project.
 
-If you want to test your project locally, you can use the following commands:
+## Installation
 
-```bash
-# Starts the replica, running in the background
-dfx start --background
+1. Clone the repository:
+   ```bash
+   git clone <repo-url>
+   cd bookstore
+   ```
 
-# Deploys your canisters to the replica and generates your candid interface
-dfx deploy
-```
+2. Install dependencies:
+   ```bash
+   cargo build --release --target wasm32-unknown-unknown
+   ```
 
-Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
+3. Install `candid-extractor` for generating the `.did` file:
+   ```bash
+   cargo install candid-extractor
+   ```
 
-If you have made changes to your backend canister, you can generate a new candid interface with
+4. Extract the Candid interface description:
+   ```bash
+   candid-extractor target/wasm32-unknown-unknown/release/bookstore.wasm > bookstore.did
+   ```
 
-```bash
-npm run generate
-```
+5. Deploy the canister to the Internet Computer.
 
-at any time. This is recommended before starting the frontend development server, and will be run automatically any time you run `dfx deploy`.
+## Usage
 
-If you are making frontend changes, you can start a development server with
+### User Roles
 
-```bash
-npm start
-```
+- **Admin**: Full access to create customers, books, assets, and assign them.
+- **Store Manager**: Can assign books and create book assets.
+- **Customer**: Can view books, add comments, and reserve books.
 
-Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+### APIs
 
-### Note on frontend environment variables
+The canister exposes a variety of functions to interact with books, customers, and assets:
 
-If you are hosting frontend code somewhere without using DFX, you may need to make one of the following adjustments to ensure your project does not fetch the root key in production:
+#### **Customer Management**
 
-- set`DFX_NETWORK` to `ic` if you are using Webpack
-- use your own preferred method to replace `process.env.DFX_NETWORK` in the autogenerated declarations
-  - Setting `canisters -> {asset_canister_id} -> declarations -> env_override to a string` in `dfx.json` will replace `process.env.DFX_NETWORK` with the string in the autogenerated declarations
-- Write your own `createActor` constructor
+1. **Create Customer**
+   - Endpoint: `create_customer`
+   - Payload: `CustomerPayload`
+   - Role required: Any user can create a customer.
+   
+2. **Get Customers**
+   - Endpoint: `get_customers`
+   - Fetches all customers.
+
+3. **Get Customer by ID**
+   - Endpoint: `get_customer_by_id`
+   - Payload: `id: u64`
+   - Returns the customer data for the specified ID.
+
+#### **Book Management**
+
+1. **Create Book**
+   - Endpoint: `create_book`
+   - Payload: `BookPayload`, `CustomerPayload` (auth)
+   - Role required: Admin or Customer.
+   - Creates a new book in the system.
+
+2. **Get Books**
+   - Endpoint: `get_books`
+   - Fetches all books.
+
+3. **Get Book by ID**
+   - Endpoint: `get_book_by_id`
+   - Payload: `id: u64`
+   - Fetches a book by its ID.
+
+4. **Update Book Status**
+   - Endpoint: `update_book_status`
+   - Payload: `UpdateBookStatusPayload`
+   - Role required: Admin.
+   - Updates the book's status (Available, Sold, Reserved).
+
+5. **Assign Book**
+   - Endpoint: `assign_book`
+   - Payload: `AssignBookPayload`, `CustomerPayload` (auth)
+   - Role required: Store Manager or Admin.
+   - Assigns a book to a customer.
+
+6. **Add Book Comment**
+   - Endpoint: `add_book_comment`
+   - Payload: `AddBookCommentPayload`
+   - Role required: Customer.
+   - Adds a comment to a book.
+
+#### **Book Asset Management**
+
+1. **Create Book Asset**
+   - Endpoint: `create_book_asset`
+   - Payload: `BookAssetPayload`, `CustomerPayload` (auth)
+   - Role required: Store Manager or Admin.
+   - Creates a book asset (e.g., hardcover, paperback).
+
+2. **Get Book Assets**
+   - Endpoint: `get_book_assets`
+   - Fetches all book assets.
+
+3. **Get Book Asset by ID**
+   - Endpoint: `get_book_asset_by_id`
+   - Payload: `id: u64`
+   - Fetches a book asset by its ID.
+
+4. **Calculate Depreciation**
+   - Endpoint: `calculate_depreciation`
+   - Payload: `CalculateDepreciationPayload`
+   - Calculates the depreciation of a book asset.
+
+### Authentication
+
+The `CustomerPayload` must be provided in relevant endpoints that require authentication. The canister checks the customer’s role to ensure authorization before proceeding with operations.
+
+---
+
+Let me know if you need any further modifications!
+# d_bookstore_icp
