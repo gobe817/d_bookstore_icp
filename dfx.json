@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "bookstore_backend": {
+      "candid": "src/bookstore_backend/bookstore_backend.did",
+      "package": "bookstore_backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
